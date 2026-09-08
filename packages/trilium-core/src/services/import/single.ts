@@ -291,6 +291,7 @@ function importHtml(taskContext: TaskContext<"importNotes">, file: File, parentN
     return note;
 }
 
+/* Old importAttachment function
 function importAttachment(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const mime = mimeService.getMime(file.originalname) || file.mimetype;
 
@@ -306,6 +307,30 @@ function importAttachment(taskContext: TaskContext<"importNotes">, file: File, p
             mime
         });
 
+        taskContext.increaseProgressCount();
+    }
+} */
+
+/* New importAttachment function with big blob processing */
+function importAttachment(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+    const mime = mimeService.getMime(file.originalname) || file.mimetype;
+
+    if (mime.startsWith("image/") && typeof file.buffer !== "string") {
+        imageService.saveImageToAttachment(parentNote.noteId, file.buffer, file.originalname, taskContext.data?.shrinkImages);
+        taskContext.increaseProgressCount();
+    } else else {
+        if (file.path) {
+            (parentNote as any)._tmpPath = file.path;
+        }
+        parentNote.saveAttachment({
+            title: file.originalname,
+            content: file.buffer,
+            role: "file",
+            mime
+        });
+        if ((parentNote as any)._tmpPath) {
+            delete (parentNote as any)._tmpPath;
+        }
         taskContext.increaseProgressCount();
     }
 }
